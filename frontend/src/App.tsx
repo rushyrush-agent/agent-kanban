@@ -2,11 +2,39 @@ import { useState } from 'react';
 import { useTasks } from './hooks';
 import TaskBoard from './components/TaskBoard';
 import CommentThread from './components/CommentThread';
+import TaskModal from './components/TaskModal';
 import type { Task } from './types';
+import { STATUS_LABELS } from './types';
+import { api } from './api';
 
 export default function App() {
   const { tasks, loading, error, refetch } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  const handleClose = () => {
+    setSelectedTask(null);
+    setEditingTask(null);
+  };
+
+  const handleEdit = () => {
+    if (selectedTask) {
+      setEditingTask(selectedTask);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedTask && confirm(`Delete "${selectedTask.title}"?`)) {
+      await api.tasks.delete(selectedTask.id);
+      setSelectedTask(null);
+      refetch();
+    }
+  };
+
+  const handleSaved = () => {
+    setEditingTask(null);
+    refetch();
+  };
 
   if (loading) {
     return (
@@ -36,19 +64,55 @@ export default function App() {
       />
       
       {selectedTask && (
-        <div className="comment-panel-overlay" onClick={() => setSelectedTask(null)}>
-          <div className="comment-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="comment-panel-header">
+        <div className="detail-panel-overlay" onClick={handleClose}>
+          <div className="detail-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="detail-panel-header">
               <h2>{selectedTask.title}</h2>
-              <button className="btn-close" onClick={() => setSelectedTask(null)}>
+              <button className="btn-close" onClick={handleClose}>
                 &times;
               </button>
             </div>
-            <div className="comment-panel-body">
-              <CommentThread task={selectedTask} />
+            
+            <div className="detail-panel-content">
+              <div className="task-detail-section">
+                <span className={`status-badge status-${selectedTask.status}`}>
+                  {STATUS_LABELS[selectedTask.status]}
+                </span>
+                {selectedTask.created_by && (
+                  <span className="task-created-by">Created by: {selectedTask.created_by}</span>
+                )}
+              </div>
+              
+              <div className="task-description-section">
+                <p className={selectedTask.description ? '' : 'no-description'}>
+                  {selectedTask.description || 'No description'}
+                </p>
+                
+                <div className="task-actions">
+                  <button className="btn-secondary" onClick={handleEdit}>
+                    Edit
+                  </button>
+                  <button className="btn-danger" onClick={handleDelete}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+              
+              <div className="comments-section">
+                <CommentThread task={selectedTask} />
+              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {editingTask && (
+        <TaskModal
+          task={editingTask}
+          isNew={false}
+          onClose={() => setEditingTask(null)}
+          onSaved={handleSaved}
+        />
       )}
     </div>
   );

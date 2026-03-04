@@ -44,11 +44,6 @@ export default function TaskBoard({ tasks, onTasksChange, onTaskSelect }: TaskBo
     setEditingTask(null);
   };
 
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsCreating(false);
-  };
-
   const handleCloseModal = () => {
     setEditingTask(null);
     setIsCreating(false);
@@ -61,15 +56,6 @@ export default function TaskBoard({ tasks, onTasksChange, onTaskSelect }: TaskBo
 
   const handleTaskClick = (task: Task) => {
     onTaskSelect?.(task);
-  };
-
-  const handleDeleteTask = async (task: Task) => {
-    try {
-      await api.tasks.delete(task.id);
-      onTasksChange();
-    } catch (error) {
-      console.error('Failed to delete task:', error);
-    }
   };
 
   return (
@@ -90,8 +76,6 @@ export default function TaskBoard({ tasks, onTasksChange, onTaskSelect }: TaskBo
               label={STATUS_LABELS[status]}
               tasks={tasksByStatus[status]}
               onTaskClick={handleTaskClick}
-              onTaskEdit={handleEditTask}
-              onTaskDelete={handleDeleteTask}
             />
           ))}
         </div>

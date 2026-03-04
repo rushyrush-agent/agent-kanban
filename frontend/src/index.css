@@ -419,11 +419,98 @@ body {
   padding: 16px;
 }
 
-/* Comment Thread */
-.comment-thread {
+/* Detail Panel */
+.detail-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 50;
+}
+
+.detail-panel {
+  width: 450px;
+  max-width: 100%;
+  background: var(--bg-secondary);
   height: 100%;
   display: flex;
   flex-direction: column;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.detail-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-panel-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.detail-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+}
+
+.task-detail-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-description-section {
+  background: var(--bg-tertiary);
+  padding: 16px;
+  border-radius: var(--radius-md);
+}
+
+.task-description-section p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.task-description-section p.no-description {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.task-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.comments-section {
+  flex: 1;
+}
+
+/* Comment Thread */
+.comment-thread {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 .comment-thread h3 {
