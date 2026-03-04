@@ -13,6 +13,7 @@ const db: DatabaseType = new Database(dbPath);
 db.exec(`
   CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id TEXT UNIQUE,
     title TEXT NOT NULL,
     description TEXT,
     status TEXT DEFAULT 'backlog' CHECK(status IN ('backlog', 'ready', 'in_progress', 'pending_user_info', 'complete')),

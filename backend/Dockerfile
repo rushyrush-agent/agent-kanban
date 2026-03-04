@@ -6,10 +6,10 @@ RUN apk add --no-cache sqlite
 
 COPY package*.json ./
 COPY tsconfig.json ./
+COPY src ./src
 
-COPY dist ./dist
-
-RUN npm ci --only=production
+RUN npm ci
+RUN npm run build
 
 EXPOSE 8444
 

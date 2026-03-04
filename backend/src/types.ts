@@ -2,6 +2,7 @@ export type TaskStatus = 'backlog' | 'ready' | 'in_progress' | 'pending_user_inf
 
 export interface Task {
   id: number;
+  task_id: string | null;
   title: string;
   description: string | null;
   status: TaskStatus;

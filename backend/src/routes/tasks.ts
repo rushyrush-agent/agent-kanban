@@ -5,6 +5,25 @@ import { emitTaskCreated, emitTaskUpdated, emitTaskDeleted } from '../socket';
 
 const router = Router();
 
+const TASK_ID_PREFIX = process.env.TASK_ID_PREFIX || 'claw';
+
+function generateNextTaskId(): string {
+  const stmt = db.prepare("SELECT task_id FROM tasks WHERE task_id LIKE ?");
+  const tasks = stmt.all(`${TASK_ID_PREFIX}-%`) as { task_id: string }[];
+  
+  let maxNum = 0;
+  for (const task of tasks) {
+    const match = task.task_id.match(/(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxNum) maxNum = num;
+    }
+  }
+  
+  const nextNum = maxNum + 1;
+  return `${TASK_ID_PREFIX}-${String(nextNum).padStart(4, '0')}`;
+}
+
 router.get('/', (req, res) => {
   const { status } = req.query;
   let tasks: Task[];
@@ -39,12 +58,15 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: 'Title is required' });
   }
   
+  const taskId = generateNextTaskId();
+  
   const stmt = db.prepare(`
-    INSERT INTO tasks (title, description, status, priority, created_by)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO tasks (task_id, title, description, status, priority, created_by)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
   
   const result = stmt.run(
+    taskId,
     input.title,
     input.description || null,
     input.status || 'backlog',

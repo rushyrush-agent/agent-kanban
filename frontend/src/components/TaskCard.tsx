@@ -23,6 +23,9 @@ export default function TaskCard({ task, index, onClick }: TaskCardProps) {
           }}
         >
           <div className="task-card-content" onClick={onClick}>
+            {task.task_id && (
+              <span className="task-id">{task.task_id}</span>
+            )}
             <h4 className="task-title">{task.title}</h4>
             {task.description && (
               <p className="task-description-preview">
