@@ -172,6 +172,11 @@ body {
   align-items: center;
 }
 
+.task-card-actions {
+  display: flex;
+  gap: 4px;
+}
+
 .task-created-by {
   font-size: 11px;
   color: var(--text-secondary);
@@ -191,6 +196,22 @@ body {
 .btn-edit:hover {
   background: var(--bg-secondary);
   color: var(--text-primary);
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-delete:hover {
+  background: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
 }
 
 /* Buttons */

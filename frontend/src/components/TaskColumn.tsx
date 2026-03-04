@@ -9,6 +9,7 @@ interface TaskColumnProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
   onTaskEdit: (task: Task) => void;
+  onTaskDelete: (task: Task) => void;
 }
 
 export default function TaskColumn({
@@ -17,6 +18,7 @@ export default function TaskColumn({
   tasks,
   onTaskClick,
   onTaskEdit,
+  onTaskDelete,
 }: TaskColumnProps) {
   return (
     <div className="task-column">
@@ -38,6 +40,7 @@ export default function TaskColumn({
                 index={index}
                 onClick={() => onTaskClick(task)}
                 onEdit={() => onTaskEdit(task)}
+                onDelete={() => onTaskDelete(task)}
               />
             ))}
             {provided.placeholder}

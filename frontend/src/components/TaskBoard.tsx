@@ -63,6 +63,15 @@ export default function TaskBoard({ tasks, onTasksChange, onTaskSelect }: TaskBo
     onTaskSelect?.(task);
   };
 
+  const handleDeleteTask = async (task: Task) => {
+    try {
+      await api.tasks.delete(task.id);
+      onTasksChange();
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+    }
+  };
+
   return (
     <div className="task-board">
       <div className="task-board-header">
@@ -82,6 +91,7 @@ export default function TaskBoard({ tasks, onTasksChange, onTaskSelect }: TaskBo
               tasks={tasksByStatus[status]}
               onTaskClick={handleTaskClick}
               onTaskEdit={handleEditTask}
+              onTaskDelete={handleDeleteTask}
             />
           ))}
         </div>

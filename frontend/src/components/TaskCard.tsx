@@ -7,9 +7,10 @@ interface TaskCardProps {
   index: number;
   onClick: () => void;
   onEdit: () => void;
+  onDelete: () => void;
 }
 
-export default function TaskCard({ task, index, onClick, onEdit }: TaskCardProps) {
+export default function TaskCard({ task, index, onClick, onEdit, onDelete }: TaskCardProps) {
   return (
     <Draggable draggableId={String(task.id)} index={index}>
       {(provided, snapshot) => (
@@ -36,15 +37,28 @@ export default function TaskCard({ task, index, onClick, onEdit }: TaskCardProps
               {task.created_by && (
                 <span className="task-created-by">{task.created_by}</span>
               )}
-              <button
-                className="btn-edit"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-              >
-                Edit
-              </button>
+              <div className="task-card-actions">
+                <button
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete "${task.title}"?`)) {
+                      onDelete();
+                    }
+                  }}
+                >
+                  🗑
+                </button>
+              </div>
             </div>
           </div>
         </div>
