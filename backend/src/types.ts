@@ -10,6 +10,7 @@ export interface Task {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  dependencies?: TaskDependencyWithTask[];
 }
 
 export interface CreateTaskInput {
@@ -40,4 +41,19 @@ export interface CreateCommentInput {
   content: string;
   author_type: 'user' | 'agent';
   author_name?: string;
+}
+
+export interface TaskDependency {
+  id: number;
+  task_id: number;
+  depends_on_task_id: number;
+  created_at: string;
+}
+
+export interface TaskDependencyWithTask extends TaskDependency {
+  depends_on_task: Task;
+}
+
+export interface CreateDependencyInput {
+  depends_on_task_id: number;
 }

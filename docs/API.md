@@ -20,6 +20,9 @@ http://localhost:8444
 | DELETE | `/api/tasks/:id` | Delete a task |
 | GET | `/api/tasks/:id/comments` | Get comments for a task |
 | POST | `/api/tasks/:id/comments` | Add a comment to a task |
+| GET | `/api/tasks/:id/dependencies` | Get task dependencies |
+| POST | `/api/tasks/:id/dependencies` | Add a dependency |
+| DELETE | `/api/tasks/:id/dependencies/:depId` | Remove a dependency |
 
 ---
 
@@ -51,13 +54,15 @@ curl http://localhost:8444/api/tasks?status=backlog
 [
   {
     "id": 1,
+    "task_id": "claw-0001",
     "title": "Implement login",
     "description": "Add JWT authentication",
     "status": "backlog",
     "priority": 0,
     "created_by": "user",
     "created_at": "2024-01-15T10:30:00.000Z",
-    "updated_at": "2024-01-15T10:30:00.000Z"
+    "updated_at": "2024-01-15T10:30:00.000Z",
+    "dependencies": []
   }
 ]
 ```
@@ -79,13 +84,15 @@ curl http://localhost:8444/api/tasks/1
 ```json
 {
   "id": 1,
+  "task_id": "claw-0001",
   "title": "Implement login",
   "description": "Add JWT authentication",
   "status": "backlog",
   "priority": 0,
   "created_by": "user",
   "created_at": "2024-01-15T10:30:00.000Z",
-  "updated_at": "2024-01-15T10:30:00.000Z"
+  "updated_at": "2024-01-15T10:30:00.000Z",
+  "dependencies": []
 }
 ```
 
@@ -133,13 +140,15 @@ curl -X POST http://localhost:8444/api/tasks \
 ```json
 {
   "id": 2,
+  "task_id": "claw-0002",
   "title": "Implement user authentication",
   "description": "Add JWT-based login with bcrypt",
   "status": "backlog",
   "priority": 0,
   "created_by": "user",
   "created_at": "2024-01-15T11:00:00.000Z",
-  "updated_at": "2024-01-15T11:00:00.000Z"
+  "updated_at": "2024-01-15T11:00:00.000Z",
+  "dependencies": []
 }
 ```
 
@@ -178,13 +187,15 @@ curl -X PUT http://localhost:8444/api/tasks/1 \
 ```json
 {
   "id": 1,
+  "task_id": "claw-0001",
   "title": "Updated title",
   "description": "Updated description",
   "status": "backlog",
   "priority": 1,
   "created_by": "user",
   "created_at": "2024-01-15T10:30:00.000Z",
-  "updated_at": "2024-01-15T11:30:00.000Z"
+  "updated_at": "2024-01-15T11:30:00.000Z",
+  "dependencies": []
 }
 ```
 
@@ -213,6 +224,7 @@ curl -X PATCH http://localhost:8444/api/tasks/1/status \
 ```json
 {
   "id": 1,
+  "task_id": "claw-0001",
   "title": "Implement login",
   "status": "in_progress",
   ...
@@ -321,6 +333,96 @@ curl -X POST http://localhost:8444/api/tasks/1/comments \
 
 ---
 
+## Dependencies
+
+### Get Task Dependencies
+
+```
+GET /api/tasks/:id/dependencies
+```
+
+**Example Request**
+```bash
+curl http://localhost:8444/api/tasks/8/dependencies
+```
+
+**Response**
+```json
+[
+  {
+    "id": 1,
+    "task_id": 8,
+    "depends_on_task_id": 3,
+    "created_at": "2024-01-15T12:00:00.000Z",
+    "depends_on_task": {
+      "id": 3,
+      "task_id": "claw-0003",
+      "title": "Set up development environment",
+      "description": "Configure local dev environment",
+      "status": "backlog",
+      "priority": 0,
+      "created_by": null,
+      "created_at": "2024-01-15T10:00:00.000Z",
+      "updated_at": "2024-01-15T10:00:00.000Z"
+    }
+  }
+]
+```
+
+---
+
+### Add Dependency
+
+```
+POST /api/tasks/:id/dependencies
+```
+
+**Request Body**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| depends_on_task_id | number | Yes | ID of the task this task depends on |
+
+**Example Request**
+```bash
+curl -X POST http://localhost:8444/api/tasks/8/dependencies \
+  -H "Content-Type: application/json" \
+  -d '{"depends_on_task_id": 3}'
+```
+
+**Response**
+```json
+{
+  "id": 1,
+  "task_id": 8,
+  "depends_on_task_id": 3,
+  "created_at": "2024-01-15T12:00:00.000Z",
+  "depends_on_task": { ... }
+}
+```
+
+**Error Responses**
+- `400 Bad Request` - Dependency already exists or self-reference
+- `404 Not Found` - Task or dependency task not found
+
+---
+
+### Remove Dependency
+
+```
+DELETE /api/tasks/:id/dependencies/:depId
+```
+
+**Example Request**
+```bash
+curl -X DELETE http://localhost:8444/api/tasks/8/dependencies/1
+```
+
+**Response**
+- `204 No Content` - Success
+
+---
+
 ## Health Check
 
 ```
@@ -358,24 +460,31 @@ const socket = io('http://localhost:8444');
 
 | Event | Data | Description |
 |-------|------|-------------|
-| `task:created` | `Task` | New task created |
-| `task:updated` | `Task` | Task updated (any field) |
+| `task:created` | `Task` | New task created (includes dependencies) |
+| `task:updated` | `Task` | Task updated (any field, includes dependencies) |
 | `task:deleted` | `{ id: number }` | Task deleted |
 | `comment:added` | `Comment` | New comment added |
+| `task:dependency_added` | `TaskDependencyWithTask` | Dependency added to a task |
+| `task:dependency_removed` | `{ task_id, depends_on_task_id }` | Dependency removed |
+| `task:promotion_suggested` | `{ task_id, blocked_by }` | Blocked task can be promoted |
 
 ### Example
 
 ```javascript
 socket.on('task:created', (task) => {
-  console.log('New task:', task.title);
+  console.log('New task:', task.title, 'dependencies:', task.dependencies);
 });
 
 socket.on('task:updated', (task) => {
   console.log(`Task #${task.id} status: ${task.status}`);
 });
 
-socket.on('comment:added', (comment) => {
-  console.log(`New comment on task #${comment.task_id}: ${comment.content}`);
+socket.on('task:dependency_added', (dep) => {
+  console.log(`Task #${dep.task_id} now depends on #${dep.depends_on_task_id}`);
+});
+
+socket.on('task:promotion_suggested', ({ task_id, blocked_by }) => {
+  console.log(`Task #${task_id} is unblocked by #${blocked_by} - suggest promoting to Ready`);
 });
 ```
 
@@ -411,6 +520,7 @@ type TaskStatus = 'backlog' | 'ready' | 'in_progress' | 'pending_user_info' | 'c
 
 interface Task {
   id: number;
+  task_id: string | null;
   title: string;
   description: string | null;
   status: TaskStatus;
@@ -418,6 +528,7 @@ interface Task {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  dependencies?: TaskDependencyWithTask[];
 }
 
 interface Comment {
@@ -427,5 +538,25 @@ interface Comment {
   author_type: 'user' | 'agent';
   author_name: string;
   created_at: string;
+}
+
+interface TaskDependency {
+  id: number;
+  task_id: number;
+  depends_on_task_id: number;
+  created_at: string;
+}
+
+interface TaskDependencyWithTask extends TaskDependency {
+  depends_on_task: Task;
+}
+
+interface CreateDependencyInput {
+  depends_on_task_id: number;
+}
+
+interface PromotionSuggestion {
+  task_id: number;
+  blocked_by: number;
 }
 ```

@@ -141,6 +141,41 @@ curl http://localhost:8444/api/tasks/1/comments
 
 ---
 
+## Task Dependencies
+
+Tasks can depend on other tasks. A task cannot be worked on until all its dependencies are completed.
+
+### Adding Dependencies
+
+```bash
+# Task 8 depends on Task 3
+curl -X POST http://localhost:8444/api/tasks/8/dependencies \
+  -H "Content-Type: application/json" \
+  -d '{"depends_on_task_id": 3}'
+```
+
+### Chain Example
+
+```
+claw-0008 → claw-0003 → claw-0007
+```
+
+Complete in order: claw-0007 → claw-0003 → claw-0008
+
+### Auto-Promote Notifications
+
+When a blocked task's dependency completes, the system emits a `task:promotion_suggested` event. The frontend displays a notification to promote the blocked task to "Ready".
+
+### Dependency API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/tasks/:id/dependencies` | List task dependencies |
+| POST | `/api/tasks/:id/dependencies` | Add a dependency |
+| DELETE | `/api/tasks/:id/dependencies/:depId` | Remove a dependency |
+
+---
+
 ## OpenClaw Tool Integration Example
 
 Here's how OpenClaw could use this API as a custom tool:
@@ -268,6 +303,18 @@ socket.on('task:deleted', ({ id }) => {
 
 socket.on('comment:added', (comment) => {
   console.log('New comment:', comment);
+});
+
+socket.on('task:dependency_added', (dependency) => {
+  console.log('Dependency added:', dependency);
+});
+
+socket.on('task:dependency_removed', ({ task_id, depends_on_task_id }) => {
+  console.log('Dependency removed from task:', task_id);
+});
+
+socket.on('task:promotion_suggested', ({ task_id, blocked_by }) => {
+  console.log('Task', task_id, 'is now unblocked by', blocked_by);
 });
 ```
 

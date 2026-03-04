@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { Task, Comment } from './types';
+import type { Task, Comment, TaskDependencyWithTask, PromotionSuggestion } from './types';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -70,14 +70,74 @@ export function useTasks(initialStatus?: string) {
       setTasks((prev) => prev.filter((t) => t.id !== id));
     });
 
+    socket.on('task:dependency_added', (dependency: TaskDependencyWithTask) => {
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === dependency.task_id) {
+            const deps = t.dependencies || [];
+            return { ...t, dependencies: [...deps, dependency] };
+          }
+          return t;
+        })
+      );
+    });
+
+    socket.on('task:dependency_removed', ({ task_id, depends_on_task_id }: { task_id: number; depends_on_task_id: number }) => {
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === task_id && t.dependencies) {
+            return {
+              ...t,
+              dependencies: t.dependencies.filter((d) => d.depends_on_task_id !== depends_on_task_id),
+            };
+          }
+          return t;
+        })
+      );
+    });
+
     return () => {
       socket.off('task:created');
       socket.off('task:updated');
       socket.off('task:deleted');
+      socket.off('task:dependency_added');
+      socket.off('task:dependency_removed');
     };
   }, [socket]);
 
   return { tasks, loading, error, refetch: fetchTasks };
+}
+
+export function usePromotionSuggestions() {
+  const [suggestions, setSuggestions] = useState<PromotionSuggestion[]>([]);
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('task:promotion_suggested', (suggestion: PromotionSuggestion) => {
+      setSuggestions((prev) => {
+        if (prev.some((s) => s.task_id === suggestion.task_id && s.blocked_by === suggestion.blocked_by)) {
+          return prev;
+        }
+        return [...prev, suggestion];
+      });
+    });
+
+    return () => {
+      socket.off('task:promotion_suggested');
+    };
+  }, [socket]);
+
+  const dismissSuggestion = useCallback((taskId: number, blockedBy: number) => {
+    setSuggestions((prev) => prev.filter((s) => !(s.task_id === taskId && s.blocked_by === blockedBy)));
+  }, []);
+
+  const clearAllSuggestions = useCallback(() => {
+    setSuggestions([]);
+  }, []);
+
+  return { suggestions, dismissSuggestion, clearAllSuggestions };
 }
 
 export function useComments(taskId: number | null) {

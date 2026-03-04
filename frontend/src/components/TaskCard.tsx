@@ -9,17 +9,20 @@ interface TaskCardProps {
 }
 
 export default function TaskCard({ task, index, onClick }: TaskCardProps) {
+  const isBlocked = task.dependencies && task.dependencies.length > 0 && 
+    task.dependencies.some((d) => d.depends_on_task.status !== 'complete');
+
   return (
     <Draggable draggableId={String(task.id)} index={index}>
       {(provided, snapshot) => (
         <div
-          className={`task-card ${snapshot.isDragging ? 'dragging' : ''}`}
+          className={`task-card ${snapshot.isDragging ? 'dragging' : ''} ${isBlocked ? 'blocked' : ''}`}
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           style={{
             ...provided.draggableProps.style,
-            borderLeftColor: STATUS_COLORS[task.status],
+            borderLeftColor: isBlocked ? '#ef4444' : STATUS_COLORS[task.status],
           }}
         >
           <div className="task-card-content" onClick={onClick}>
@@ -33,6 +36,12 @@ export default function TaskCard({ task, index, onClick }: TaskCardProps) {
                   ? task.description.substring(0, 80) + '...'
                   : task.description}
               </p>
+            )}
+            {isBlocked && (
+              <div className="task-blocked-indicator">
+                <span className="blocked-icon">🔒</span>
+                <span>Blocked by: {task.dependencies?.map((d) => d.depends_on_task.task_id || d.depends_on_task_id).join(', ')}</span>
+              </div>
             )}
             {task.created_by && (
               <div className="task-card-footer">

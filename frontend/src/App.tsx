@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTasks } from './hooks';
+import { useTasks, usePromotionSuggestions } from './hooks';
 import TaskBoard from './components/TaskBoard';
 import CommentThread from './components/CommentThread';
 import TaskModal from './components/TaskModal';
@@ -9,6 +9,7 @@ import { api } from './api';
 
 export default function App() {
   const { tasks, loading, error, refetch } = useTasks();
+  const { suggestions, dismissSuggestion } = usePromotionSuggestions();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -112,7 +113,44 @@ export default function App() {
           isNew={false}
           onClose={() => setEditingTask(null)}
           onSaved={handleSaved}
+          allTasks={tasks}
         />
+      )}
+
+      {suggestions.length > 0 && (
+        <div className="promotion-suggestions">
+          {suggestions.map((s) => {
+            const blockedBy = tasks.find((t) => t.id === s.blocked_by);
+            const task = tasks.find((t) => t.id === s.task_id);
+            if (!blockedBy || !task) return null;
+            return (
+              <div key={`${s.task_id}-${s.blocked_by}`} className="promotion-suggestion">
+                <span>
+                  Task <strong>{blockedBy.task_id || blockedBy.id}</strong> is complete. 
+                  Promote <strong>{task.task_id || task.id}</strong> to "Ready"?
+                </span>
+                <div className="suggestion-actions">
+                  <button
+                    className="btn-primary btn-small"
+                    onClick={async () => {
+                      await api.tasks.updateStatus(task.id, 'ready');
+                      dismissSuggestion(s.task_id, s.blocked_by);
+                      refetch();
+                    }}
+                  >
+                    Promote
+                  </button>
+                  <button
+                    className="btn-secondary btn-small"
+                    onClick={() => dismissSuggestion(s.task_id, s.blocked_by)}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

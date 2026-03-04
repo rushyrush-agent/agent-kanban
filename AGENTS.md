@@ -10,7 +10,7 @@ agent-kanban/
 │   └── src/
 │       ├── components/  # React components
 │       ├── api.ts       # API client
-│       ├── hooks.ts     # React hooks (useTasks, useComments, useSocket)
+│       ├── hooks.ts     # React hooks (useTasks, useComments, useSocket, usePromotionSuggestions)
 │       ├── types.ts     # Shared types
 │       └── App.tsx      # Main app
 └── backend/           # Express + SQLite + TypeScript
@@ -148,6 +148,16 @@ try {
 ```typescript
 type TaskStatus = 'backlog' | 'ready' | 'in_progress' | 'pending_user_info' | 'complete';
 ```
+
+### Task Dependencies
+
+Tasks support dependencies via the `dependencies` field. Use dependency endpoints:
+
+- `POST /api/tasks/:id/dependencies` - Add a dependency
+- `DELETE /api/tasks/:id/dependencies/:depId` - Remove a dependency
+- `GET /api/tasks/:id/dependencies` - List task dependencies
+
+When a task with dependencies completes, the backend emits a `task:promotion_suggested` event to prompt promoting blocked tasks.
 
 ### General
 

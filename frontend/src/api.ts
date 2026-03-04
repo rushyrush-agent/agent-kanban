@@ -1,4 +1,4 @@
-import type { Task, CreateTaskInput, Comment, CreateCommentInput, TaskStatus } from './types';
+import type { Task, CreateTaskInput, Comment, CreateCommentInput, TaskStatus, TaskDependencyWithTask, CreateDependencyInput } from './types';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -71,6 +71,25 @@ export const api = {
       return fetchApi<Comment>(`/api/tasks/${taskId}/comments`, {
         method: 'POST',
         body: JSON.stringify(input),
+      });
+    },
+  },
+
+  dependencies: {
+    list: (taskId: number): Promise<TaskDependencyWithTask[]> => {
+      return fetchApi<TaskDependencyWithTask[]>(`/api/tasks/${taskId}/dependencies`);
+    },
+
+    add: (taskId: number, input: CreateDependencyInput): Promise<TaskDependencyWithTask> => {
+      return fetchApi<TaskDependencyWithTask>(`/api/tasks/${taskId}/dependencies`, {
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+    },
+
+    remove: (taskId: number, depId: number): Promise<void> => {
+      return fetchApi<void>(`/api/tasks/${taskId}/dependencies/${depId}`, {
+        method: 'DELETE',
       });
     },
   },
